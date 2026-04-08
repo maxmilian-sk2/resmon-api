@@ -1,0 +1,10 @@
+1. User running resmon-api must be part of the "docker" group (sudoless docker).
+
+2. Possible Docker container states: 
+- created
+- running
+- paused
+- restarting
+- exited
+- dead
+
