@@ -1,14 +1,51 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Header, HTTPException, status, Depends
+from pathlib import Path
 from docker_func import instantiate_docker_client, get_docker_containers, get_docker_networks
 from sys_func import get_cpu_thread_count, get_cpu_load
+
+# Load API token
+
+apiToken = ''
+try :
+    with Path('.env.example').open('r') as envFile :
+        apiToken = envFile.read().lstrip('API_TOKEN=')
+except :
+    print("Missing API_TOKEN configuration")
+    #logging
+    quit()
+
+# Instantiate FastAPI and Docker client
 
 app = FastAPI()
 
 instantiate_docker_client()
 
-@app.get("/api/docker/containers/")
-async def containers(targetStatus: str = Query(..., description = "Status to fetch, e.g. exited", min_length=1)) :
+# API token verification function
+
+def verify_auth(bearer: str = Header(None, alias="Authorization")) -> str:
+
+    if not bearer:
+        raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail = "Bearer header missing (API Token)")
+
+    if bearer != apiToken:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "Invalid API Token")
     
+    return bearer
+
+######
+
+# Endpoints
+
+@app.get("/api/docker/containers/")
+async def containers(targetStatus: str = Query(..., description = "Status to fetch, e.g. exited", min_length=1), bearer: str = Depends(verify_auth)) :
+
+    options = ('created', 'running', 'paused', 'restarting', 'exited', 'dead')
+
+    if targetStatus not in options :
+        return {
+            "container_amount" : -1
+        }
+
     containerList = await get_docker_containers(targetStatus)
 
     return {
@@ -16,7 +53,7 @@ async def containers(targetStatus: str = Query(..., description = "Status to fet
     }
 
 @app.get("/api/docker/networks/")
-async def networks() :
+async def networks(bearer: str = Depends(verify_auth)) :
     
     netList = await get_docker_networks()
 
@@ -25,7 +62,7 @@ async def networks() :
     }
 
 @app.get("/api/sys/cpucores/")
-async def cpu_cores() :
+async def cpu_cores(bearer: str = Depends(verify_auth)) :
     
     count = await get_cpu_thread_count()
 
@@ -34,7 +71,7 @@ async def cpu_cores() :
     }
 
 @app.get("/api/sys/cpuload/")
-async def cpu_load(perCore: bool = Query(False, description="Show individual core loads")) :
+async def cpu_load(perCore: bool = Query(False, description="Show individual core loads"), bearer: str = Depends(verify_auth)) :
     
     if perCore :
         perCoreLoad = await get_cpu_load(True)

@@ -1,10 +1,11 @@
 1. User running resmon-api must be part of the "docker" group (sudoless docker).
 
-2. Possible Docker container states: 
-- created
-- running
-- paused
-- restarting
-- exited
-- dead
+Auth header does not work in the swagger, quick curl reference below
 
+curl -H "Authorization: letmein" http://127.0.0.1:8000/api/docker/containers/?targetStatus=exited
+
+curl -H "Authorization: letmein" http://127.0.0.1:8000/api/docker/networks/
+
+curl -H "Authorization: letmein" http://127.0.0.1:8000/api/sys/cpucores/
+
+curl -H "Authorization: letmein" http://127.0.0.1:8000/api/sys/cpuload/?perCore=targetStatus
