@@ -46,3 +46,19 @@ async def get_docker_networks() :
             # logging
 
     return netList
+
+async def get_docker_volumes() :
+
+    volResult = None
+    volList = list()
+
+    if dockerClientFlag :
+        try :
+            volResult = await dockerClient.volumes.list()
+            for vol in volResult["Volumes"] :
+                volList.append(vol["Name"])
+        except :
+            pass
+            # logging
+
+    return volList
