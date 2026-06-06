@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Header, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from docker_func import instantiate_docker_client, get_docker_containers, get_docker_networks, get_docker_volumes
+from docker_func import instantiate_docker_client, get_docker_containers, get_docker_networks, get_docker_volumes, dockerClient, dockerClientFlag
 from sys_func import get_cpu_thread_count, get_cpu_load, get_ram_utilization, get_disk_usage
 
 # Load API token and CORS config from .env (plain text line by line)
@@ -22,7 +22,15 @@ except :
 
 # Instantiate FastAPI and Docker client
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    await instantiate_docker_client()
+    yield
+    if dockerClientFlag:
+        await dockerClient.close()
+
+app = FastAPI(lifespan=lifespan)
 
 # CORS (comma-separated list of allowed origins, or * for all, e.g. CORS_ORIGINS=http://localhost:3000,https://example.com)
 
@@ -35,8 +43,6 @@ app.add_middleware(
     allow_methods = ["*"],
     allow_headers = ["*"],
 )
-
-instantiate_docker_client()
 
 # API token verification function
 
