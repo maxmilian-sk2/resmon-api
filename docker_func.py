@@ -3,15 +3,14 @@ import aiodocker
 dockerClient = None
 dockerClientFlag = False
 
-def instantiate_docker_client() :
+async def instantiate_docker_client():
 
     global dockerClient
     global dockerClientFlag
-
-    try :
+    try:
         dockerClient = aiodocker.Docker()
         dockerClientFlag = True
-    except :
+    except Exception:
         pass
         # logging
 
